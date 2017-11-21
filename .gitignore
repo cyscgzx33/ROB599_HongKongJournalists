@@ -1,0 +1,4 @@
+*~
+*.log
+*.egg-info/
+.DS_Store
