@@ -1,5 +1,6 @@
 %% F2017 ME 599 Project
-clear all;clc;close all;
+clear all;clc;
+ close all;
 %% Car information
 % Car parameters already included in 'forwardIntegrateControllInput.m'
 %% Track Information
@@ -28,12 +29,51 @@ s_start=0; % start from the race start and end at the same location after one la
 %%
 traj = struct; Car = struct;
 
-steer_input = [-0*ones(250,1);-0.0255*ones(80,1);-0.2*ones(70,1);-0.3*ones(150,1);-0.3*ones(200,1);... % 750
-               -0.062*ones(100,1);-0.08*ones(250,1);-0.02*ones(200,1)];
+steer_input = [-0.01*ones(250,1); 0*ones(250,1); 0.02*ones(50,1); 0.02*ones(50,1); 0.02*ones(50,1); -0.05*ones(50,1); -0.05*ones(50,1);  -0.05*ones(50,1);...
+  -0.05*ones(50,1); -0.02*ones(50,1); 0*ones(50,1); -0.02*ones(50,1); -0.05*ones(50,1);  -0.05*ones(50,1); -0.02*ones(50,1); 0*ones(50,1); -0.02*ones(50,1);...
+  -0.05*ones(50,1); -0.02*ones(50,1); -0.02*ones(50,1); 0*ones(50,1); 0*ones(50,1); -0.05*ones(50,1); -0.05*ones(50,1); -0.05*ones(50,1); -0.02*ones(50,1);...
+  0*ones(50,1); 0*ones(50,1);  -0.05*ones(50,1); -0.05*ones(50,1);  -0.05*ones(50,1); 0.02*ones(50,1); 0.02*ones(50,1); -0.02*ones(50,1);  0*ones(50,1); ...
+  0.02*ones(50,1); -0.02*ones(50,1); 0*ones(50,1); 0*ones(50,1);  0.02*ones(50,1); 0.02*ones(50,1); 0*ones(50,1); 0.02*ones(50,1);  0.05*ones(50,1);...
+  0.05*ones(50,1);0.02*ones(50,1);  0.05*ones(50,1); 0.02*ones(50,1); 0.02*ones(50,1); 0.04*ones(50,1); 0*ones(50,1); -0.02*ones(50,1); -0.02*ones(50,1);...
+  -0.02*ones(50,1); -0.05*ones(50,1); -0.05*ones(50,1); -0.05*ones(50,1); -0.05*ones(50,1);...
+  -0.05*ones(50,1);-0.05*ones(50,1);-0.05*ones(50,1);0.05*ones(50,1);0.01*ones(50,1);0*ones(50,1);0.05*ones(50,1);0.05*ones(50,1);0.05*ones(50,1);0.05*ones(50,1);0.05*ones(50,1);...
+  0.05*ones(50,1);0.08*ones(50,1);0.08*ones(50,1);0.01*ones(50,1);0.01*ones(50,1);0.01*ones(50,1);-0.01*ones(50,1);-0.06*ones(50,1);-0.03*ones(50,1);-0.01*ones(50,1);-0.01*ones(50,1);...
+  -0.05*ones(50,1);-0.05*ones(50,1);-0.05*ones(50,1);-0.05*ones(50,1);0.03*ones(50,1);-0.05*ones(50,1);-0.05*ones(50,1);-0.03*ones(50,1);0.03*ones(50,1);0.03*ones(50,1);...
+  -0.06*ones(50,1);-0.08*ones(50,1);-0.03*ones(50,1);-0.03*ones(50,1);-0.01*ones(50,1);-0.04*ones(50,1);-0.05*ones(50,1);-0.05*ones(50,1);-0.05*ones(50,1);...
+  -0.01*ones(50,1);0*ones(50,1);0*ones(50,1);0*ones(50,1);0*ones(50,1);0*ones(50,1);0.01*ones(50,1);0.01*ones(50,1);0.01*ones(50,1);0.05*ones(50,1);0.08*ones(50,1);...
+  0*ones(50,1);0*ones(50,1);0.08*ones(50,1);0.08*ones(50,1);0.08*ones(50,1);0.08*ones(50,1);0.08*ones(50,1);0*ones(50,1);0*ones(50,1);0.04*ones(50,1);0.04*ones(50,1);...
+  0*ones(50,1);0*ones(50,1);0*ones(50,1);-0.08*ones(50,1);0*ones(50,1);0.05*ones(50,1);0.03*ones(50,1);0.03*ones(50,1);0.03*ones(50,1);0.04*ones(50,1);...       %%%1127
+   -0.05*ones(50,1); -0.05*ones(50,1); -0.05*ones(50,1); -0.05*ones(50,1); -0.05*ones(50,1); -0.05*ones(50,1); -0.05*ones(50,1); -0.05*ones(50,1);...
+    -0.06*ones(50,1); -0.06*ones(50,1); -0.06*ones(50,1); -0.05*ones(50,1); -0.05*ones(50,1); -0.05*ones(50,1); -0.05*ones(50,1); -0.05*ones(50,1);...
+     -0.05*ones(50,1); -0.05*ones(50,1); -0.05*ones(50,1); -0.05*ones(50,1); 0.06*ones(50,1); 0.08*ones(50,1); 0.08*ones(50,1);...
+      0.08*ones(50,1); 0.08*ones(50,1); 0.08*ones(50,1); 0.08*ones(50,1); 0.08*ones(50,1); 0.06*ones(50,1); 0.06*ones(50,1);...
+       0*ones(50,1); -0.01*ones(50,1); -0.01*ones(50,1); 0*ones(50,1); 0*ones(50,1); 0*ones(50,1); 0*ones(50,1); 0*ones(50,1);...
+        0.01*ones(50,1); 0.02*ones(50,1); 0.01*ones(50,1); 0.01*ones(50,1); 0.01*ones(50,1); 0.08*ones(50,1); 0.08*ones(50,1);...
+         0.05*ones(50,1); 0.05*ones(50,1); 0.05*ones(50,1); 0*ones(50,1); 0*ones(50,1); 0*ones(700,1)]; % 1300
 % steer_input = [-0.000*ones(300,1);-0.2*ones(300,1);-0.5*ones(150,1)];
-force_input = 6000*[ones(300,1);ones(205,1);-10/6*ones(245,1);... % 750
-                    ones(550,1)]; 
-U = [steer_input, force_input];
+force_input = 6000*[ones(250,1); 0*ones(250,1); 0*ones(50,1); -10/6*ones(50,1); -10/6*ones(50,1);0*ones(50,1);0*ones(50,1); 0*ones(50,1); ...
+   0*ones(50,1);  0*ones(50,1);  0*ones(50,1); 0*ones(50,1); 0*ones(50,1); 0*ones(50,1); 0*ones(50,1); 0*ones(50,1); 0*ones(50,1);...
+   0*ones(50,1); 0*ones(50,1); 0*ones(50,1); 0*ones(50,1); 0*ones(50,1); 0*ones(50,1); 0*ones(50,1); 0*ones(50,1); 0*ones(50,1);... 
+   0*ones(50,1); 0*ones(50,1); ones(20,1); ones(30,1);  ones(50,1); ones(50,1); ones(50,1);  ones(50,1);  ones(50,1); ones(50,1); ...
+   ones(50,1); ones(50,1); -10/6*ones(50,1); -10/6*ones(50,1); -10/6*ones(50,1);  -10/6*ones(50,1); -10/6*ones(50,1); 0*ones(50,1);  0*ones(50,1);...
+   0*ones(50,1); 0*ones(50,1); 0*ones(50,1); 0*ones(50,1); ones(50,1); ones(50,1); ones(50,1); 0*ones(50,1); -10/6*ones(50,1);...
+   0*ones(50,1); 0*ones(50,1); 0*ones(50,1); 0*ones(50,1); 0*ones(50,1);0*ones(50,1);0*ones(50,1);0*ones(50,1);0.01*ones(50,1);0.01*ones(50,1);0.01*ones(50,1);0.01*ones(50,1);...
+   0.01*ones(50,1);0.01*ones(50,1);0.01*ones(50,1);0.01*ones(50,1);0.01*ones(50,1);0.01*ones(50,1);0.01*ones(50,1);0.4*ones(50,1);0.01*ones(50,1);0.3*ones(50,1);0.01*ones(50,1);0.01*ones(50,1);...
+   0.01*ones(50,1);0.01*ones(50,1);0.01*ones(50,1);0.01*ones(50,1);0.01*ones(50,1);0.01*ones(50,1);0.01*ones(50,1);0.01*ones(50,1);0.01*ones(50,1);0.01*ones(50,1);0.01*ones(50,1);...
+   0.01*ones(50,1);0.01*ones(50,1);0.01*ones(50,1);0.01*ones(50,1);0.01*ones(50,1);0.01*ones(50,1);0.01*ones(50,1);0.01*ones(50,1);0.01*ones(50,1);0.01*ones(50,1);0.01*ones(50,1);...
+   0.01*ones(50,1);0.01*ones(50,1);ones(50,1);1*ones(50,1);ones(50,1);ones(50,1);-10/6*ones(50,1);-10/6*ones(50,1);-10/6*ones(50,1);0.01*ones(50,1);0.01*ones(50,1);...
+   0.01*ones(50,1);0.01*ones(50,1);0.01*ones(50,1);0.01*ones(50,1);0.01*ones(50,1);0.01*ones(50,1);0.01*ones(50,1);ones(50,1);ones(50,1);ones(50,1);ones(50,1);...
+   ones(50,1);0.01*ones(50,1);0.01*ones(50,1);-10/6*ones(50,1);-10/6*ones(50,1);-10/6*ones(50,1);0.01*ones(50,1);0.01*ones(50,1);0.01*ones(50,1);0.01*ones(50,1);...     %%%1127
+   0.01*ones(50,1); 0.01*ones(50,1); 0.01*ones(50,1); 0.01*ones(50,1); 0.01*ones(50,1); 0.01*ones(50,1); 0.01*ones(50,1); 0.01*ones(50,1);...
+    0.01*ones(50,1); 0.01*ones(50,1); 0.01*ones(50,1); 0.01*ones(50,1); 0.01*ones(50,1); 0.1*ones(50,1); 0.1*ones(50,1); 0.1*ones(50,1);...
+     0.1*ones(50,1); 0.1*ones(50,1); 0.1*ones(50,1); 0.1*ones(50,1); 0.1*ones(50,1); 0.1*ones(50,1); 0.1*ones(50,1); 0.1*ones(50,1); 0.01*ones(50,1); 0.01*ones(50,1);...
+      0.01*ones(50,1); 0.01*ones(50,1); 0.01*ones(50,1); 0.01*ones(50,1); 0.1*ones(50,1); ones(50,1); ones(50,1); ones(50,1); ones(50,1); ones(50,1); 0.01*ones(50,1); 0.01*ones(50,1);...
+      -10/6*ones(50,1); 0.01*ones(50,1); 0.01*ones(50,1); 0.01*ones(50,1); 0.01*ones(50,1); 0.01*ones(50,1); 0.01*ones(50,1);...
+       0.01*ones(50,1); 0.01*ones(50,1); 0.01*ones(50,1); 0.01*ones(50,1); 0.01*ones(50,1); ones(700,1)]; 
+
+%U = [steer_input, force_input];
+jj=0;
+U = [steer_input(1:end-jj*50), force_input(1:end-jj*50)];
 [Y]=forwardIntegrateControlInput(U);
 
 % traj = [Y(:,1),Y(:,3)];
@@ -169,18 +209,24 @@ L(1)=plot3(Xcar(1),Xcar(2),Xcar(3),'bo','MarkerSize',6);
 L(2)=plot3(vline(1,:),vline(2,:),vline(3,:),'b','LineWidth',2);
 L(3)=plot3(frontwheelline(1,:),frontwheelline(2,:),frontwheelline(3,:),'g','LineWidth',4);
 L(4)=plot3(rearwheelline(1,:),rearwheelline(2,:),rearwheelline(3,:),'g','LineWidth',4);
-xlim([200,600])
-ylim([-200,200])
+% xlim([200,600])
+% ylim([-200,200])
 % text(traj.x(end)+20,traj.y(end)+5,{str1})
 
 %%%%% plot some marker points %%%%%
-plot(traj.x(500),traj.y(500),'rx','LineWidth',2)
-text(traj.x(500),traj.y(500),'      \leftarrow This is the 5 second position')
-plot(traj.x(750),traj.y(750),'rx','LineWidth',2)
-text(traj.x(750),traj.y(750),'      \leftarrow This is the 7.5 second position')
+% plot(traj.x(500),traj.y(500),'rx','LineWidth',2)
+% text(traj.x(500),traj.y(500),'      \leftarrow This is the 5 second position')
+% plot(traj.x(750),traj.y(750),'rx','LineWidth',2)
+% text(traj.x(750),traj.y(750),'      \leftarrow This is the 7.5 second position')
+% plot(traj.x(1000),traj.y(1000),'rx','LineWidth',2)
+% text(traj.x(1000),traj.y(1000),'      \leftarrow This is the 10 second position')
+% plot(traj.x(1250),traj.y(1250),'rx','LineWidth',2)
+% text(traj.x(1250),traj.y(1250),'      \leftarrow This is the 12.5 second position')
+
 
 
 %%%%% plot some arc length to check %%%%%
+%{
 plot(pinpointed_xr(600),pinpointed_yr(600),'bx','lineWidth',1.5);hold on;
 plot(pinpointed_xl(600),pinpointed_yl(600),'bx','lineWidth',1.5);hold on;
 plot(traj.x(600),traj.y(600),'ro','lineWidth',1.5); hold on;
@@ -192,7 +238,7 @@ plot(traj.x(300),traj.y(300),'ro','lineWidth',1.5);
 plot(pinpointed_xr(1200),pinpointed_yr(1200),'bx','lineWidth',1.5);hold on;
 plot(pinpointed_xl(1200),pinpointed_yl(1200),'bx','lineWidth',1.5);hold on;
 plot(traj.x(1200),traj.y(1200),'ro','lineWidth',1.5);
-
+%}
 %% Figure 4
 figure(4)
 %%%%% plot total track %%%%%
@@ -230,24 +276,24 @@ ylim([-200,200])
 % text(traj.x(end)+20,traj.y(end)+5,{str1})
 
 %%%%% plot some marker points %%%%%
-plot(traj.x(500),traj.y(500),'rx','LineWidth',2)
-text(traj.x(500),traj.y(500),'      \leftarrow This is the 5 second position')
-plot(traj.x(750),traj.y(750),'rx','LineWidth',2)
-text(traj.x(750),traj.y(750),'      \leftarrow This is the 7.5 second position')
+% plot(traj.x(500),traj.y(500),'rx','LineWidth',2)
+% text(traj.x(500),traj.y(500),'      \leftarrow This is the 5 second position')
+% plot(traj.x(750),traj.y(750),'rx','LineWidth',2)
+% text(traj.x(750),traj.y(750),'      \leftarrow This is the 7.5 second position')
 
 
 %%%%% plot some arc length to check %%%%%
-plot(pinpointed_xr_(600),pinpointed_yr_(600),'bx','lineWidth',1.5);hold on;
-plot(pinpointed_xl_(600),pinpointed_yl_(600),'bx','lineWidth',1.5);hold on;
-plot(traj.x(600),traj.y(600),'ro','lineWidth',1.5); hold on;
-
-plot(pinpointed_xr_(300),pinpointed_yr_(300),'bx','lineWidth',1.5);hold on;
-plot(pinpointed_xl_(300),pinpointed_yl_(300),'bx','lineWidth',1.5);hold on;
-plot(traj.x(300),traj.y(300),'ro','lineWidth',1.5);
-
-plot(pinpointed_xr_(1200),pinpointed_yr_(1200),'bx','lineWidth',1.5);hold on;
-plot(pinpointed_xl_(1200),pinpointed_yl_(1200),'bx','lineWidth',1.5);hold on;
-plot(traj.x(1200),traj.y(1200),'ro','lineWidth',1.5);
+% plot(pinpointed_xr_(600),pinpointed_yr_(600),'bx','lineWidth',1.5);hold on;
+% plot(pinpointed_xl_(600),pinpointed_yl_(600),'bx','lineWidth',1.5);hold on;
+% plot(traj.x(600),traj.y(600),'ro','lineWidth',1.5); hold on;
+% 
+% plot(pinpointed_xr_(300),pinpointed_yr_(300),'bx','lineWidth',1.5);hold on;
+% plot(pinpointed_xl_(300),pinpointed_yl_(300),'bx','lineWidth',1.5);hold on;
+% plot(traj.x(300),traj.y(300),'ro','lineWidth',1.5);
+% 
+% plot(pinpointed_xr_(1200),pinpointed_yr_(1200),'bx','lineWidth',1.5);hold on;
+% plot(pinpointed_xl_(1200),pinpointed_yl_(1200),'bx','lineWidth',1.5);hold on;
+% plot(traj.x(1200),traj.y(1200),'ro','lineWidth',1.5);
 
 %% Figure 2
 figure(2)
