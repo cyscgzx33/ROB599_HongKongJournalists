@@ -1,73 +1,87 @@
-function [c,ceq,Jc,Jceq] = discretizedCon(x,sysParam)
+function [c,ceq,Jc,Jceq] = discretizedCon(z,sysParam)
     
-    delta_t=sysParam(1,1);
-    N=sysParam(2,1);
-    xDim=sysParam(3,1);
-    track_bl=sysParam(4,1);
-    track_br=sysParam(5,1);
-    isTargetConstraint = sysParam(6,1); % 1 for target as constraint
-    trackSegNum=sysParam(7,1);
-    
-    track_ang = linspace(pi,0,trackSegNum);
-    track_bl = [track_bl*cos(track_ang);track_bl*sin(track_ang)];
-    track_br = [track_br*cos(track_ang);track_br*sin(track_ang)];
-    
-    u_lb = -10;
-    u_ub = 10;
+    N = sysParam.N; % Time step for free time optimization (number of imputs)
+    delta_ts = sysParam.delta_ts;
+    isTargetConstraint = sysParam.isTargetConstraint; % 1 for target as constraint
+    zDim_per_step = sysParam.zDim_per_step; % 1 for tau, 2 for state, 1 for b
+
+    zDim = sysParam.zDim; % Dimension of states: N for input and 2*(N+1) for states
+
+    StartPos = sysParam.StartPos;
+    TargetPos = sysParam.TargetPos;
+
+    u_lb = sysParam.u_lb;
+    u_ub = sysParam.u_ub;
+
+    track_bl = sysParam.track_bl;
+    track_br = sysParam.track_br;
     
     %% Inequality constraint
-    c_circ = zeros(2*(N+1),1);
-    Jc_circ = zeros(2*(N+1),xDim);
+    numCon_b = 1; % 1 for b,
+    numCon_u = 2*N; % 2*N for input (upper and lower limits)
+    numCon_tau = 0; % (N+1) for tau constraints (already considered in the equality constraint)
+    numCon_circ = 2*(N+1); % 2*(N+1) for circle constraints,
+    c = zeros(numCon_b + numCon_u + numCon_tau + numCon_circ, 1);
+    Jc = zeros(numCon_b + numCon_u + numCon_tau + numCon_circ, zDim)'; % Matlab uses transpose of Jacobian
+    c_circ = size(numCon_circ,1);
+    Jc_circ = zeros(numCon_circ,zDim);
     for k = 0:N
         % For each point, find the nearest points on bl and br, and do
         % interpolation to find out the constraint
-        distance2_bl=(track_bl(1,:)-x(1,1)).^2+(track_bl(2,:)-x(2,1)).^2;
+        distance2_bl=(track_bl(1,:)-z(N+zDim_per_step*k+2,1)).^2+(track_bl(2,:)-z(N+zDim_per_step*k+3,1)).^2;
         distance2_bl_sorted=sort(distance2_bl);
         [~,nearestIndex_bl]=intersect(distance2_bl,distance2_bl_sorted(1:2));
         v_bl=[track_bl(1,max(nearestIndex_bl))-track_bl(1,min(nearestIndex_bl));track_bl(2,max(nearestIndex_bl))-track_bl(2,min(nearestIndex_bl))];
-        distance2_br=(track_br(1,:)-x(1,1)).^2+(track_br(2,:)-x(2,1)).^2;
+        distance2_br=(track_br(1,:)-z(N+zDim_per_step*k+2,1)).^2+(track_br(2,:)-z(N+zDim_per_step*k+3,1)).^2;
         distance2_br_sorted=sort(distance2_br);
         [~,nearestIndex_br]=intersect(distance2_br,distance2_br_sorted(1:2));
         v_br=[track_br(1,max(nearestIndex_br))-track_br(1,min(nearestIndex_br));track_br(2,max(nearestIndex_br))-track_br(2,min(nearestIndex_br))];
-        c_circ(2*k+1:2*k+2,1)=[v_bl(1)*(x(N+2*k+2,1)-track_bl(2,min(nearestIndex_bl)))-v_bl(2)*(x(N+2*k+1,1)-track_bl(1,min(nearestIndex_bl)));...
-                               -v_br(1)*(x(N+2*k+2,1)-track_br(2,min(nearestIndex_br)))+v_br(2)*(x(N+2*k+1,1)-track_br(1,min(nearestIndex_br)))];
-        Jc_circ(2*k+1,N+2*k+1) = -v_bl(2);
-        Jc_circ(2*k+1,N+2*k+2) = v_bl(1);
-        Jc_circ(2*k+2,N+2*k+1) = v_br(2);
-        Jc_circ(2*k+2,N+2*k+2) = -v_br(1);
+        c_circ(2*k+1:2*k+2,1)=[v_bl(1)*(z(N+zDim_per_step*k+3,1)-track_bl(2,min(nearestIndex_bl)))-v_bl(2)*(z(N+zDim_per_step*k+2,1)-track_bl(1,min(nearestIndex_bl)));...
+                               -v_br(1)*(z(N+zDim_per_step*k+3,1)-track_br(2,min(nearestIndex_br)))+v_br(2)*(z(N+zDim_per_step*k+2,1)-track_br(1,min(nearestIndex_br)))];
+        Jc_circ(2*k+1,N+zDim_per_step*k+2) = -v_bl(2);
+        Jc_circ(2*k+1,N+zDim_per_step*k+3) = v_bl(1);
+        Jc_circ(2*k+2,N+zDim_per_step*k+2) = v_br(2);
+        Jc_circ(2*k+2,N+zDim_per_step*k+3) = -v_br(1);
     end
-    c = [x(1:N,1)-u_ub.*ones(size(x(1:N,1)));...
-        -x(1:N,1)+u_lb.*ones(size(x(1:N,1)));...
-        c_circ];
-    Jc = [[eye(N) zeros(N,xDim-N)];...
-          [-eye(N) zeros(N,xDim-N)];...
+    c = [-z(zDim,1)+0*10; % b need to be positive or obove a value
+         z(1:N,1)-u_ub.*ones(N,1);... % control input upper limit
+         -z(1:N,1)+u_lb.*ones(N,1);... % control input lower limit
+         c_circ];
+    Jc = [[zeros(1,zDim-1) -1];...
+          [eye(N) zeros(N,zDim-N)];...
+          [-eye(N) zeros(N,zDim-N)];...
           Jc_circ]'; % Matlab uses transpose of Jacobian
     
+    b = z(zDim,1);
     %% Equality constraint
-    if isTargetConstraint == 0 
+    if isTargetConstraint == 0 % Target as a part of the cost function, so it does not apper in the constraint
         for k = 0:N-1 % Euler Forward
-            ceq(2*k+1,1) = x(N+2*(k+1)+1) - x(N+2*k+1) - delta_t*0.310625*x(N+2*k+2);
-            ceq(2*k+2,1) = x(N+2*(k+1)+2) - x(N+2*k+2) - delta_t*1*x(k+1);
-            Jceq(2*k+1,:) = [zeros(1,N+2*k) -1 -delta_t*0.310625 1 zeros(1,xDim-N-2*k-3)];
-            Jceq(2*k+2,:) = [zeros(1,k) -delta_t zeros(1,N-k-1) zeros(1,2*k+1) -1 0 1 zeros(1,xDim-N-2*k-4)];
+            ceq(zDim_per_step*k+1:zDim_per_step*k+zDim_per_step,1) = [z(N+zDim_per_step*(k+1)+1 : N+zDim_per_step*(k+1)+zDim_per_step , 1)]...
+                                                                     -[z(N+zDim_per_step*k+1 : N+zDim_per_step*k+zDim_per_step , 1)]...
+                                                                     -delta_ts*[b;b*[0 0.310625 0;0 0 1]*[z(N+zDim_per_step*k+2,1);z(N+zDim_per_step*k+3,1);z(k+1,1)];0];
+            
+%             Jceq(zDim_per_step*k+1:zDim_per_step*k+zDim_per_step,:) = [];
         end
-        ceq = [ceq;x(N+1,1)+1; x(N+2,1)]; % Initial condition ?????????? Is is necessary?
-        Jceq = [Jceq;...
-               zeros(1,N) 1 zeros(1,xDim-N-1);...
-               zeros(1,N+1) 1 zeros(1,xDim-N-2)]'; % Matlab uses transpose of Jacobian
-    elseif isTargetConstraint == 1
+        ceq = [ceq;z(N+2:N+3,1)-StartPos]; % Initial condition ?????????? Is is necessary?
+        Jceq=[];
+%         Jceq = [Jceq;...
+%                zeros(1,N+1) 1 zeros(1,zDim-N-2);...
+%                zeros(1,N+2) 1 zeros(1,zDim-N-3)]'; % Matlab uses transpose of Jacobian
+    elseif isTargetConstraint == 1 % Target as constraint
         for k = 0:N-1 % Euler Forward
-            ceq(2*k+1,1) = x(N+2*(k+1)+1) - x(N+2*k+1) - delta_t*0.310625*x(N+2*k+2);
-            ceq(2*k+2,1) = x(N+2*(k+1)+2) - x(N+2*k+2) - delta_t*1*x(k+1);
-            Jceq(2*k+1,:) = [zeros(1,N+2*k) -1 -delta_t*0.310625 1 zeros(1,xDim-N-2*k-3)];
-            Jceq(2*k+2,:) = [zeros(1,k) -delta_t zeros(1,N-k-1) zeros(1,2*k+1) -1 0 1 zeros(1,xDim-N-2*k-4)];
+            ceq(zDim_per_step*k+1:zDim_per_step*k+zDim_per_step,1) = [z(N+zDim_per_step*(k+1)+1 : N+zDim_per_step*(k+1)+zDim_per_step , 1)]...
+                                                                     -[z(N+zDim_per_step*k+1 : N+zDim_per_step*k+zDim_per_step , 1)]...
+                                                                     -delta_ts*[b;b*[0 0.310625 0;0 0 1]*[z(N+zDim_per_step*k+2,1);z(N+zDim_per_step*k+3,1);z(k+1,1)];0];
+            
+%             Jceq(zDim_per_step*k+1:zDim_per_step*k+zDim_per_step,:) = [];
         end
-        ceq = [ceq;x(N+1,1)+1; x(N+2,1);x(xDim-1,1)-1;x(xDim,1)]; % Initial condition ?????????? Is is necessary?
-        Jceq = [Jceq;...
-               zeros(1,N) 1 zeros(1,xDim-N-1);...
-               zeros(1,N+1) 1 zeros(1,xDim-N-2);...
-               zeros(1,xDim-2) 1 0;...
-               zeros(1,xDim-1) 0]'; % Matlab uses transpose of Jacobian
+        ceq = [ceq;z(zDim-2:zDim-1,1)-TargetPos;z(N+2:N+3,1)-StartPos]; % Initial condition ?????????? Is is necessary?
+        Jceq=[];
+%         Jceq = [Jceq;...
+%                zeros(1,zDim-3) 1 0 0;...
+%                zeros(1,zDim-2) 1 0;... % Matlab uses transpose of Jacobian   
+%                zeros(1,N+1) 1 zeros(1,zDim-N-2);...
+%                zeros(1,N+2) 1 zeros(1,zDim-N-3)]';    
     end
            
 end
